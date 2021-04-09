@@ -22,24 +22,25 @@
     <parent>
         <artifactId>connector-parent</artifactId>
         <groupId>com.evolveum.polygon</groupId>
-        <version>1.4.2.35</version>
+        <version>1.5.0.0</version>
         <relativePath></relativePath>
     </parent>
 
     <groupId>com.evolveum.polygon</groupId>
-    <artifactId>connector-csv</artifactId>
-    <version>2.5-SNAPSHOT</version>
+    <artifactId>connector-cloud-csv</artifactId>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>CSV Connector</name>
+    <name>CSV Cloud Object Storage Connector</name>
 
     <properties>
-        <project.source.version>1.8</project.source.version>
-
-        <connectorPackage>com.evolveum.polygon.connector.csv</connectorPackage>
-        <connectorClass>CsvConnector</connectorClass>
-
-        <commons.csv.version>1.4</commons.csv.version>
+        <connectorPackage>com.evolveum.polygon.connector.cloud.objectstorage.csv</connectorPackage>
+        <connectorClass>CsvCloudObjectStorageConnector</connectorClass>
+        <maven.compiler.source>1.11</maven.compiler.source>
+        <maven.compiler.target>1.11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <commons.csv.version>1.8</commons.csv.version>
+        <commons.io.version>2.8.0</commons.io.version>
     </properties>
 
     <repositories>
@@ -81,6 +82,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
             <version>${commons.csv.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
         </dependency>
     </dependencies>
 </project>
