@@ -41,6 +41,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons.csv.version>1.8</commons.csv.version>
         <commons.io.version>2.8.0</commons.io.version>
+        <aws.version>1.11.995</aws.version>
     </properties>
 
     <repositories>
@@ -87,6 +88,11 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons.io.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.995</version>
         </dependency>
     </dependencies>
 </project>

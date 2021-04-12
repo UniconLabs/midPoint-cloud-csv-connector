@@ -32,7 +32,7 @@ public class SearchOpTest extends BaseTest {
     @Test
     public void findOneWithRepeatingColumn() throws Exception {
         CsvConfiguration config = new CsvConfiguration();
-        config.setFilePath(new File(CSV_FILE_PATH));
+        //config.setFilePath(new File(CSV_FILE_PATH));
         config.setUniqueAttribute("id");
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
@@ -50,7 +50,7 @@ public class SearchOpTest extends BaseTest {
     @Test
     public void findAllAccountsRepeatingColumn() throws Exception {
         CsvConfiguration config = new CsvConfiguration();
-        config.setFilePath(new File(CSV_FILE_PATH));
+        //config.setFilePath(new File(CSV_FILE_PATH));
         config.setUniqueAttribute("id");
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
@@ -67,7 +67,7 @@ public class SearchOpTest extends BaseTest {
     @Test(expectedExceptions = ConnectorException.class)
     public void searchWrongNumberColumnCountInRow() throws Exception {
         CsvConfiguration config = new CsvConfiguration();
-        config.setFilePath(new File(CSV_FILE_PATH));
+        //config.setFilePath(new File(CSV_FILE_PATH));
         config.setQuoteMode("ALL");
         config.setFieldDelimiter(",");
         config.setMultivalueDelimiter(";");

@@ -1,5 +1,6 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
@@ -23,6 +24,9 @@ public abstract class BaseTest {
     public static final String TEMPLATE_FOLDER_PATH = "./src/test/resources";
 
     public static final String CSV_FILE_PATH = "./target/data.csv";
+    public static final String CSV_TMP_FILE_PATH = "./target/";
+    public static final String S3_BUCKET_NAME = "unicontests3connector";
+    public static final String S3_FILE_NAME = "data.csv";
 
     public static final String ATTR_UID = "uid";
     public static final String ATTR_FIRST_NAME = "firstName";
@@ -36,8 +40,10 @@ public abstract class BaseTest {
     protected CsvConfiguration createConfigurationNameEqualsUid() {
         CsvConfiguration config = new CsvConfiguration();
 
-        config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
-        config.setTmpFolder(null);
+        //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
+        config.setFileName(BaseTest.S3_FILE_NAME);
+        config.setBucketName(BaseTest.S3_BUCKET_NAME);
+        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
 
@@ -46,8 +52,10 @@ public abstract class BaseTest {
 
     protected CsvConfiguration createConfigurationDifferent() {
         CsvConfiguration config = new CsvConfiguration();
-        config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
-        config.setTmpFolder(null);
+        //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
+        config.setFileName(BaseTest.S3_FILE_NAME);
+        config.setBucketName(BaseTest.S3_BUCKET_NAME);
+        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setNameAttribute(ATTR_LAST_NAME);
@@ -76,11 +84,11 @@ public abstract class BaseTest {
     protected void copyDataFile(String csvTemplate, CsvConfiguration config) throws IOException {
     	File file = new File(CSV_FILE_PATH);
         file.delete();
-
-        FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + csvTemplate), new File(CSV_FILE_PATH));
-
-        config.setFilePath(new File(CSV_FILE_PATH));
-        config.setTmpFolder(null);
+        config.setFileName(BaseTest.S3_FILE_NAME);
+        config.setBucketName(BaseTest.S3_BUCKET_NAME);
+        S3Utils.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + csvTemplate));
+        //config.setFilePath(new File(CSV_FILE_PATH));
+        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
 
         config.validate();
     }

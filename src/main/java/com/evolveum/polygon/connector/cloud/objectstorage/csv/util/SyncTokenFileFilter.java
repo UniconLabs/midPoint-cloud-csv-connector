@@ -14,6 +14,7 @@ public class SyncTokenFileFilter implements FilenameFilter {
         this.csvFileName = csvFileName;
     }
 
+    //TODO DIEGO: S3
     @Override
     public boolean accept(File parent, String fileName) {
         File file = new File(parent, fileName);

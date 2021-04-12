@@ -19,8 +19,10 @@ public class ObjectClassHandlerConfiguration {
     private static final Log LOG = Log.getLog(ObjectClassHandlerConfiguration.class);
 
     private ObjectClass objectClass;
-
-    private File filePath;
+    //TODO DIEGO: S3
+    //private File filePath;
+    private String bucketName;
+    private String fileName;
 
     private String encoding;
 
@@ -45,7 +47,7 @@ public class ObjectClassHandlerConfiguration {
     private String multivalueAttributes;
 
     private int preserveOldSyncFiles = 10;
-
+    //TODO DIEGO: S3. By the moment, temp folder will remain as local.
     private File tmpFolder;
 
     private boolean readOnly = false;
@@ -62,9 +64,11 @@ public class ObjectClassHandlerConfiguration {
     public ObjectClassHandlerConfiguration(ObjectClass oc, Map<String, Object> values) {
         this.objectClass = oc;
 
-        setFilePath(Util.getSafeValue(values, "filePath", null, File.class));
+        //setFilePath(Util.getSafeValue(values, "filePath", null, File.class));
+        setBucketName(Util.getSafeValue(values, "bucketName", null));
+        setFileName(Util.getSafeValue(values, "fileName", null));
         setEncoding(Util.getSafeValue(values, "encoding", "utf-8"));
-
+        setTmpFolder(Util.getSafeValue(values, "tmpFolder", null, File.class));
         setFieldDelimiter(Util.getSafeValue(values, "fieldDelimiter", ";"));
         setEscape(Util.getSafeValue(values, "escape", "\\"));
         setCommentMarker(Util.getSafeValue(values, "commentMarker", "#"));
@@ -95,9 +99,9 @@ public class ObjectClassHandlerConfiguration {
     }
 
     public void recompute() {
-        if (tmpFolder == null && filePath != null) {
+        /*if (tmpFolder == null && filePath != null) {
             this.tmpFolder = filePath.getParentFile();
-        }
+        }*/
 
         if (StringUtil.isEmpty(nameAttribute)) {
             nameAttribute = uniqueAttribute;
@@ -136,10 +140,11 @@ public class ObjectClassHandlerConfiguration {
         this.readOnly = readOnly;
     }
 
+    //TODO DIEGO: S3
     public File getTmpFolder() {
         return tmpFolder;
     }
-
+    //TODO DIEGO: S3
     public void setTmpFolder(File tmpFolder) {
         this.tmpFolder = tmpFolder;
     }
@@ -160,12 +165,29 @@ public class ObjectClassHandlerConfiguration {
         this.objectClass = objectClass;
     }
 
-    public File getFilePath() {
+
+    /*public File getFilePath() {
         return filePath;
     }
 
     public void setFilePath(File filePath) {
         this.filePath = filePath;
+    }*/
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getEncoding() {
@@ -350,13 +372,13 @@ public class ObjectClassHandlerConfiguration {
     }
 
     private void validateCsvFile() {
-    	Util.checkCanReadFile(filePath);
+    	Util.checkCanReadFileS3(bucketName,fileName);
 
-    	synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
+    	/*synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
     		if (!readOnly && !filePath.canWrite()) {
     			throw new ConfigurationException("Can't write to file '" + filePath.getAbsolutePath() + "'");
     		}
-    	}
+    	}*/
     }
 
     private void validateAttributeNames() {

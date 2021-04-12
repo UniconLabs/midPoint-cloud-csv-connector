@@ -1,6 +1,7 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.CsvTestUtil;
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.Util;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
@@ -196,7 +197,7 @@ public class SyncOpTest extends BaseTest {
         int runCount = 0;
         try {
             SyncToken startToken = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
-            switchCsvFile(true);
+            switchCsvFile(true, config);
 
             long oldTokenValue;
             boolean useSecond = false;
@@ -241,7 +242,7 @@ public class SyncOpTest extends BaseTest {
 
                 token = newToken;
 
-                switchCsvFile(useSecond);
+                switchCsvFile(useSecond, config);
                 useSecond = !useSecond;
             }
         } finally {
@@ -250,14 +251,14 @@ public class SyncOpTest extends BaseTest {
         }
     }
 
-    private void switchCsvFile(boolean useSecond) throws IOException {
+    private void switchCsvFile(boolean useSecond, CsvConfiguration config) throws IOException {
         String file = useSecond ? "sync-loop-2.csv" : "sync-loop-1.csv";
+        S3Utils.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + "/" + file));
+        //File csv = new File(CSV_FILE_PATH);
+        //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH, file), csv);
+        //FileUtils.touch(csv);
 
-        File csv = new File(CSV_FILE_PATH);
-        FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH, file), csv);
-        FileUtils.touch(csv);
-
-        LOG.info("Using second={0}, time: {1}", useSecond, csv.lastModified());
+        LOG.info("Using second={0}, time: {1}", useSecond, S3Utils.getObjectLastUpdated(config.getBucketName(), config.getFileName()));
     }
 
     @Test
@@ -269,7 +270,7 @@ public class SyncOpTest extends BaseTest {
         ConnectorFacade connector = setupConnector("/sync-loop-1.csv", config);
 
         SyncToken token = connector.getLatestSyncToken(ObjectClass.ACCOUNT);
-        switchCsvFile(true);
+        switchCsvFile(true, config);
 
         int count = 0;
         SyncToken token2 = null;
@@ -277,7 +278,7 @@ public class SyncOpTest extends BaseTest {
             count++;
 
             token2 = doSync(connector, token);
-            switchCsvFile(false);
+            switchCsvFile(false, config);
 
             File toDelete = Util.createSyncFileName(Long.parseLong((String) token2.getValue()), config.getConfig());
             if (!toDelete.delete()) {

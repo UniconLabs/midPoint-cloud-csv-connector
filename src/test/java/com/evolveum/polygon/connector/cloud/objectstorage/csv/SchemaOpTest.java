@@ -1,5 +1,6 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.exceptions.ConfigurationException;
@@ -29,7 +30,8 @@ public class SchemaOpTest extends BaseTest {
         FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.properties"), groupsProperties);
         File groupsCsv = new File("./target/groups.csv");
         groupsCsv.delete();
-        FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.csv"), groupsCsv);
+        //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.csv"), groupsCsv);
+        S3Utils.uploadFileToS3(config.getBucketName(), "groups.csv", new File(TEMPLATE_FOLDER_PATH + "/groups.csv"));
 
 
         ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);

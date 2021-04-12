@@ -18,8 +18,8 @@ public class ConfigurationTest extends BaseTest {
         CsvConfiguration config = new CsvConfiguration();
 
         File data = new File(BaseTest.CSV_FILE_PATH);
-        config.setFilePath(data);
-        config.setTmpFolder(null);
+        //config.setFilePath(data);
+        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setReadOnly(true);

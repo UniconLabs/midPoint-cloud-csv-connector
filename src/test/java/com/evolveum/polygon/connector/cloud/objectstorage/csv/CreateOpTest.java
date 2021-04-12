@@ -29,8 +29,8 @@ public class CreateOpTest extends BaseTest {
     public void readOnlyMode() throws Exception {
         CsvConfiguration config = new CsvConfiguration();
 
-        config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
-        config.setTmpFolder(null);
+        //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
+        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setReadOnly(true);

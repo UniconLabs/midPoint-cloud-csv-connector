@@ -1,6 +1,10 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.S3Object;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.Column;
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.StringAccessor;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.Util;
 import org.apache.commons.csv.CSVFormat;
@@ -47,14 +51,43 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 
 	public ObjectClassHandler(ObjectClassHandlerConfiguration configuration) {
 		this.configuration = configuration;
-
-		header = initHeader(configuration.getFilePath());
+		header = initHeaderS3(configuration.getBucketName(), configuration.getFileName());
 	}
+
 
 	private Map<String, Column> initHeader(File csvFile) {
 		synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
 			CSVFormat csv = Util.createCsvFormat(configuration);
 			try (Reader reader = Util.createReader(csvFile, configuration)) {
+				CSVParser parser = csv.parse(reader);
+				Iterator<CSVRecord> iterator = parser.iterator();
+
+				CSVRecord record = null;
+				while (iterator.hasNext()) {
+					record = iterator.next();
+					if (!isRecordEmpty(record)) {
+						break;
+					}
+				}
+
+				if (record == null) {
+					throw new ConfigurationException("Couldn't initialize headers, nothing in csv file for object class "
+							+ configuration.getObjectClass());
+				}
+
+				return createHeader(record);
+			} catch (IOException ex) {
+				throw new ConnectorIOException("Couldn't initialize connector for object class "
+						+ configuration.getObjectClass(), ex);
+			}
+		}
+	}
+
+	private Map<String, Column> initHeaderS3(String bucketName, String fileName) {
+		//TODO check the synchronized behavior
+		synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
+			CSVFormat csv = Util.createCsvFormat(configuration);
+			try (Reader reader = Util.createReaderS3(fileName, configuration)) {
 				CSVParser parser = csv.parse(reader);
 				Iterator<CSVRecord> iterator = parser.iterator();
 
@@ -272,7 +305,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = Util.createReader(configuration);
+				reader = Util.createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				CSVFormat csv = Util.createCsvFormat(configuration);
@@ -307,25 +340,21 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 				writer.close();
 				reader.close();
 
-				moveTmpToOrig();
+				moveTmpToOrigS3();
 			}
 		} catch (Exception ex) {
 			handleGenericException(ex, "Error during account '" + uid + "' create");
 		} finally {
 			Util.cleanupResources(writer, reader, lock, configuration);
 		}
-		
+
 		return uid;
 	}
 
-	private void moveTmpToOrig() throws IOException {
+	private void moveTmpToOrigS3() throws IOException {
 		// moving existing file
-		String path = configuration.getFilePath().getPath();
-		File orig = new File(path);
-
 		File tmp = Util.createTmpPath(configuration);
-
-		Files.move(tmp.toPath(), orig.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		S3Utils.uploadFileToS3(configuration.getBucketName(), configuration.getFileName(), tmp);
 	}
 
 	private boolean isPassword(String column) {
@@ -419,7 +448,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 	@Override
 	public void executeQuery(ObjectClass oc, String uid, ResultsHandler handler, OperationOptions oo) {
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = Util.createReader(configuration)) {
+		try (Reader reader = Util.createReaderS3(configuration)) {
 
 			CSVParser parser = csv.parse(reader);
 			Iterator<CSVRecord> iterator = parser.iterator();
@@ -474,7 +503,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		validateAuthenticationInputs(username, password, authenticate);
 
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = Util.createReader(configuration)) {
+		try (Reader reader = Util.createReaderS3(configuration)) {
 
 			ConnectorObject object = null;
 
@@ -586,6 +615,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		return oldCsv;
 	}
 
+	//TODO DIEGO: S3
 	private void doSync(long token, SyncResultsHandler handler) {
 		String newToken = createNewSyncFile();
 		SyncToken newSyncToken = new SyncToken(newToken);
@@ -797,12 +827,9 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 
 		String token = null;
 		try {
-			File real = configuration.getFilePath();
-
 			File last = Util.createSyncFileName(timestamp, configuration);
-
 			LOG.info("Creating new sync file {0} file {1}", timestamp, last.getName());
-			Files.copy(real.toPath(), last.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			S3Utils.getInAFile(configuration.getBucketName(),configuration.getFileName(), last);
 			LOG.ok("New sync file created, name {0}, size {1}", last.getName(), last.length());
 
 			token = Long.toString(timestamp);
@@ -826,7 +853,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 	public void test() {
 		configuration.validate();
 
-		initHeader(configuration.getFilePath());
+		initHeaderS3(configuration.getBucketName(),configuration.getFileName());
 	}
 
 	@Override
@@ -969,7 +996,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = Util.createReader(configuration);
+				reader = Util.createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				boolean found = false;
@@ -993,7 +1020,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 					if (StringUtil.isEmpty(recordUidValue)) {
 						continue;
 					}
-				
+
 					if (!uidMatches(uid.getUidValue(), recordUidValue, configuration.isIgnoreIdentifierCase())) {
 						printer.printRecord(record);
 						continue;
@@ -1007,7 +1034,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 						int uidIndex = this.header.get(configuration.getUniqueAttribute()).getIndex();
 						Object newUidValue = updated.get(uidIndex);
 						uid = new Uid(newUidValue.toString());
-					
+
 						printer.printRecord(updated);
 					}
 				}
@@ -1019,7 +1046,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 					throw new UnknownUidException("Account '" + uid + "' not found");
 				}
 
-				moveTmpToOrig();
+				moveTmpToOrigS3();
 			}
 		} catch (Exception ex) {
 			handleGenericException(ex, "Error during account '" + uid + "' " + operation.name());

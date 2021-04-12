@@ -16,6 +16,7 @@ import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 import org.identityconnectors.framework.common.objects.Attribute;
 
 import java.io.*;
+import java.nio.Buffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
@@ -50,6 +51,7 @@ public class Util {
         }
     }
 
+    //TODO: This must be changed to the S3 way.
     public static void closeQuietly(FileLock lock) {
         try {
             if (lock != null && lock.isValid()) {
@@ -61,18 +63,17 @@ public class Util {
     }
 
     public static File createSyncLockFile(ObjectClassHandlerConfiguration config) {
-        String fileName = config.getFilePath().getName() + "." + SYNC_LOCK_EXTENSION;
+        String fileName = config.getFileName() + "." + SYNC_LOCK_EXTENSION;
         return new File(config.getTmpFolder(), fileName);
     }
 
     public static File createTmpPath(ObjectClassHandlerConfiguration config) {
-        String fileName = config.getFilePath().getName() + config.hashCode() + "." + TMP_EXTENSION;
+        String fileName = config.getFileName() + config.hashCode() + "." + TMP_EXTENSION;
         return new File(config.getTmpFolder(), fileName);
     }
 
     public static FileLock obtainTmpFileLock(ObjectClassHandlerConfiguration config) {
         File tmp = createTmpPath(config);
-
         return obtainTmpFileLock(tmp);
     }
 
@@ -159,16 +160,22 @@ public class Util {
         return defValue;
     }
 
-    public static BufferedReader createReader(ObjectClassHandlerConfiguration configuration) throws IOException {
-        return createReader(configuration.getFilePath(), configuration);
-    }
-
     public static BufferedReader createReader(File path, ObjectClassHandlerConfiguration configuration) throws IOException {
         FileInputStream fis = new FileInputStream(path);
         InputStreamReader in = new InputStreamReader(fis, configuration.getEncoding());
         return new BufferedReader(in);
     }
 
+    public static BufferedReader createReaderS3(ObjectClassHandlerConfiguration configuration) throws IOException {
+        return createReaderS3(configuration.getFileName(), configuration);
+    }
+
+    public static BufferedReader createReaderS3(String fileName, ObjectClassHandlerConfiguration configuration) throws IOException {
+        BufferedReader fileOpened = S3Utils.openFile(configuration.getBucketName(),fileName, configuration.getEncoding());
+        return fileOpened;
+    }
+
+    //TODO DIEGO: S3
     public static void checkCanReadFile(File file) {
         if (file == null) {
             throw new ConfigurationException("File path is not defined");
@@ -185,6 +192,24 @@ public class Util {
         		throw new ConfigurationException("File '" + file + "' can't be read");
         	}
         }
+    }
+
+    public static void checkCanReadFileS3(String bucketName, String fileName) {
+        if (!S3Utils.getObjectExists(bucketName, fileName)) {
+            throw new ConfigurationException("BucketName or FileName are not correct");
+        }
+        //TODO DIEGO: Do I need this?
+        /*synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
+            if (!file.exists()) {
+                throw new ConfigurationException("File '" + file + "' doesn't exists. At least file with CSV header must exist");
+            }
+            if (file.isDirectory()) {
+                throw new ConfigurationException("File path '" + file + "' is a directory, must be a CSV file");
+            }
+            if (!file.canRead()) {
+                throw new ConfigurationException("File '" + file + "' can't be read");
+            }
+        }*/
     }
 
     public static void handleGenericException(Exception ex, String message) {
@@ -210,13 +235,11 @@ public class Util {
     }
 
     public static BufferedReader createReader(CsvConfiguration configuration) throws IOException {
-        return createReader(configuration.getFilePath(), configuration);
+        return createReaderS3(configuration.getFileName(), configuration);
     }
 
-    public static BufferedReader createReader(File path, CsvConfiguration configuration) throws IOException {
-        FileInputStream fis = new FileInputStream(path);
-        InputStreamReader in = new InputStreamReader(fis, configuration.getEncoding());
-        return new BufferedReader(in);
+    public static BufferedReader createReaderS3(String fileName, CsvConfiguration configuration) throws IOException {
+        return S3Utils.openFile(configuration.getConfig().getBucketName(), fileName, configuration.getEncoding());
     }
 
     public static Character toCharacter(String value) {
@@ -404,18 +427,13 @@ public class Util {
     }
 
     public static String[] listTokenFiles(ObjectClassHandlerConfiguration config) {
-        File csv = config.getFilePath();
-
         File tmpFolder = config.getTmpFolder();
-
-        String csvFileName = csv.getName();
+        String csvFileName = config.getFileName();
         return tmpFolder.list(new SyncTokenFileFilter(csvFileName));
     }
 
     public static File createSyncFileName(long timestamp, ObjectClassHandlerConfiguration config) {
-        File csv = config.getFilePath();
-        String fileName = csv.getName();
-
+        String fileName = config.getFileName();
         File tmpFolder = config.getTmpFolder();
 
         return new File(tmpFolder, fileName + ".sync." + timestamp);
@@ -457,4 +475,8 @@ public class Util {
 
         return Collections.unmodifiableList(list);
     }
+
+
+
+
 }

@@ -43,11 +43,28 @@ public class CsvConfiguration extends AbstractConfiguration {
         return config.getNameAttribute();
     }
 
+
+    /*
     @ConfigurationProperty(
             displayMessageKey = "UI_CSV_FILE_PATH",
             helpMessageKey = "UI_CSV_FILE_PATH_HELP", required = true)
     public File getFilePath() {
         return config.getFilePath();
+    }
+    */
+
+    @ConfigurationProperty(
+            displayMessageKey = "UI_CSV_FILE_NAME",
+            helpMessageKey = "UI_CSV_FILE_NAME_HELP", required = true)
+    public String getFileName() {
+        return config.getFileName();
+    }
+
+    @ConfigurationProperty(
+            displayMessageKey = "UI_CSV_BUCKET_NAME",
+            helpMessageKey = "UI_CSV_BUCKET_NAME_HELP", required = true)
+    public String getBucketName() {
+        return config.getBucketName();
     }
 
     @ConfigurationProperty(
@@ -229,8 +246,16 @@ public class CsvConfiguration extends AbstractConfiguration {
         config.setMultivalueDelimiter(multivalueDelimiter);
     }
 
-    public void setFilePath(File filePath) {
+    /*public void setFilePath(File filePath) {
         config.setFilePath(filePath);
+    }*/
+
+    public void setFileName(String fileName) {
+        config.setFileName(fileName);
+    }
+
+    public void setBucketName(String bucketName) {
+        config.setBucketName(bucketName);
     }
 
     public void setPasswordAttribute(String passwordAttribute) {
