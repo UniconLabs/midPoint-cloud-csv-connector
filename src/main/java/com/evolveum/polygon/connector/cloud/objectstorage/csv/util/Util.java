@@ -1,5 +1,6 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv.util;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.CsvConfiguration;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.CsvCloudObjectStorageConnector;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.ObjectClassHandlerConfiguration;
@@ -166,12 +167,12 @@ public class Util {
         return new BufferedReader(in);
     }
 
-    public static BufferedReader createReaderS3(ObjectClassHandlerConfiguration configuration) throws IOException {
-        return createReaderS3(configuration.getFileName(), configuration);
+    public static BufferedReader createReaderS3(ObjectClassHandlerConfiguration configuration, AmazonS3 s3Client) throws IOException {
+        return createReaderS3(configuration.getFileName(), configuration, s3Client);
     }
 
-    public static BufferedReader createReaderS3(String fileName, ObjectClassHandlerConfiguration configuration) throws IOException {
-        BufferedReader fileOpened = S3Utils.openFile(configuration.getBucketName(),fileName, configuration.getEncoding());
+    public static BufferedReader createReaderS3(String fileName, ObjectClassHandlerConfiguration configuration, AmazonS3 s3Client) throws IOException {
+        BufferedReader fileOpened = S3Utils.openFile(configuration.getBucketName(),fileName, configuration.getEncoding(), s3Client);
         return fileOpened;
     }
 
@@ -194,8 +195,8 @@ public class Util {
         }
     }
 
-    public static void checkCanReadFileS3(String bucketName, String fileName) {
-        if (!S3Utils.getObjectExists(bucketName, fileName)) {
+    public static void checkCanReadFileS3(String bucketName, String fileName, AmazonS3 s3Client) {
+        if (!S3Utils.getObjectExists(bucketName, fileName, s3Client)) {
             throw new ConfigurationException("BucketName or FileName are not correct");
         }
         //TODO DIEGO: Do I need this?
@@ -234,12 +235,12 @@ public class Util {
         }
     }
 
-    public static BufferedReader createReader(CsvConfiguration configuration) throws IOException {
-        return createReaderS3(configuration.getFileName(), configuration);
+    public static BufferedReader createReader(CsvConfiguration configuration, AmazonS3 s3Client) throws IOException {
+        return createReaderS3(configuration.getFileName(), configuration, s3Client);
     }
 
-    public static BufferedReader createReaderS3(String fileName, CsvConfiguration configuration) throws IOException {
-        return S3Utils.openFile(configuration.getConfig().getBucketName(), fileName, configuration.getEncoding());
+    public static BufferedReader createReaderS3(String fileName, CsvConfiguration configuration, AmazonS3 s3Client) throws IOException {
+        return S3Utils.openFile(configuration.getConfig().getBucketName(), fileName, configuration.getEncoding(), s3Client);
     }
 
     public static Character toCharacter(String value) {

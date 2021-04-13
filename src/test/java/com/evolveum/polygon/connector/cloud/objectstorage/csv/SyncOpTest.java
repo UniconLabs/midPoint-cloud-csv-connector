@@ -26,6 +26,8 @@ public class SyncOpTest extends BaseTest {
 
     private static final Log LOG = Log.getLog(SyncOpTest.class);
 
+    private CloudStorageService cloudStorageService= new CloudStorageService();
+
     @Test(expectedExceptions = ConnectorException.class)
     public void syncLock() throws Exception {
         CsvConfiguration config = createConfiguration();
@@ -253,12 +255,12 @@ public class SyncOpTest extends BaseTest {
 
     private void switchCsvFile(boolean useSecond, CsvConfiguration config) throws IOException {
         String file = useSecond ? "sync-loop-2.csv" : "sync-loop-1.csv";
-        S3Utils.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + "/" + file));
+        cloudStorageService.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + "/" + file));
         //File csv = new File(CSV_FILE_PATH);
         //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH, file), csv);
         //FileUtils.touch(csv);
 
-        LOG.info("Using second={0}, time: {1}", useSecond, S3Utils.getObjectLastUpdated(config.getBucketName(), config.getFileName()));
+        LOG.info("Using second={0}, time: {1}", useSecond, cloudStorageService.getObjectLastUpdated(config.getBucketName(), config.getFileName()));
     }
 
     @Test

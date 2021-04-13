@@ -49,8 +49,11 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 
 	private Map<String, Column> header;
 
+	private CloudStorageService cloudStorageService;
+
 	public ObjectClassHandler(ObjectClassHandlerConfiguration configuration) {
 		this.configuration = configuration;
+		this.cloudStorageService = configuration.getCloudStorageService();
 		header = initHeaderS3(configuration.getBucketName(), configuration.getFileName());
 	}
 
@@ -87,7 +90,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		//TODO check the synchronized behavior
 		synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
 			CSVFormat csv = Util.createCsvFormat(configuration);
-			try (Reader reader = Util.createReaderS3(fileName, configuration)) {
+			try (Reader reader = cloudStorageService.createReaderS3(fileName, configuration)) {
 				CSVParser parser = csv.parse(reader);
 				Iterator<CSVRecord> iterator = parser.iterator();
 
@@ -305,7 +308,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = Util.createReaderS3(configuration);
+				reader = cloudStorageService.createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				CSVFormat csv = Util.createCsvFormat(configuration);
@@ -354,7 +357,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 	private void moveTmpToOrigS3() throws IOException {
 		// moving existing file
 		File tmp = Util.createTmpPath(configuration);
-		S3Utils.uploadFileToS3(configuration.getBucketName(), configuration.getFileName(), tmp);
+		cloudStorageService.uploadFileToS3(configuration.getBucketName(), configuration.getFileName(), tmp);
 	}
 
 	private boolean isPassword(String column) {
@@ -448,7 +451,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 	@Override
 	public void executeQuery(ObjectClass oc, String uid, ResultsHandler handler, OperationOptions oo) {
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = Util.createReaderS3(configuration)) {
+		try (Reader reader = cloudStorageService.createReaderS3(configuration)) {
 
 			CSVParser parser = csv.parse(reader);
 			Iterator<CSVRecord> iterator = parser.iterator();
@@ -503,7 +506,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		validateAuthenticationInputs(username, password, authenticate);
 
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = Util.createReaderS3(configuration)) {
+		try (Reader reader = cloudStorageService.createReaderS3(configuration)) {
 
 			ConnectorObject object = null;
 
@@ -829,7 +832,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		try {
 			File last = Util.createSyncFileName(timestamp, configuration);
 			LOG.info("Creating new sync file {0} file {1}", timestamp, last.getName());
-			S3Utils.getInAFile(configuration.getBucketName(),configuration.getFileName(), last);
+			cloudStorageService.getInAFile(configuration.getBucketName(),configuration.getFileName(), last);
 			LOG.ok("New sync file created, name {0}, size {1}", last.getName(), last.length());
 
 			token = Long.toString(timestamp);
@@ -996,7 +999,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = Util.createReaderS3(configuration);
+				reader = cloudStorageService.createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				boolean found = false;

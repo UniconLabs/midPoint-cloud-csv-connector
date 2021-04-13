@@ -68,6 +68,13 @@ public class CsvConfiguration extends AbstractConfiguration {
     }
 
     @ConfigurationProperty(
+            displayMessageKey = "UI_CSV_REGION_NAME",
+            helpMessageKey = "UI_CSV_REGION_NAME_HELP", required = true)
+    public String getRegion() {
+        return config.getRegion();
+    }
+
+    @ConfigurationProperty(
             displayMessageKey = "UI_CSV_PASSWORD_ATTRIBUTE",
             helpMessageKey = "UI_CSV_PASSWORD_ATTRIBUTE_HELP")
     public String getPasswordAttribute() {
@@ -252,6 +259,11 @@ public class CsvConfiguration extends AbstractConfiguration {
 
     public void setFileName(String fileName) {
         config.setFileName(fileName);
+    }
+
+    public void setRegion(String region) {
+        config.setRegion(region);
+        config.setCloudStorageService(new CloudStorageService(region));
     }
 
     public void setBucketName(String bucketName) {

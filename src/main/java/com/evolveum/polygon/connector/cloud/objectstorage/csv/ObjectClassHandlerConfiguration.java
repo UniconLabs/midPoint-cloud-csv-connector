@@ -1,5 +1,7 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.Util;
 import org.apache.commons.csv.QuoteMode;
 import org.identityconnectors.common.StringUtil;
@@ -23,6 +25,7 @@ public class ObjectClassHandlerConfiguration {
     //private File filePath;
     private String bucketName;
     private String fileName;
+    private String region;
 
     private String encoding;
 
@@ -47,7 +50,6 @@ public class ObjectClassHandlerConfiguration {
     private String multivalueAttributes;
 
     private int preserveOldSyncFiles = 10;
-    //TODO DIEGO: S3. By the moment, temp folder will remain as local.
     private File tmpFolder;
 
     private boolean readOnly = false;
@@ -57,6 +59,8 @@ public class ObjectClassHandlerConfiguration {
     private boolean container = false;
     private boolean auxiliary = false;
 
+    private CloudStorageService cloudStorageService;
+
     public ObjectClassHandlerConfiguration() {
         this(ObjectClass.ACCOUNT, null);
     }
@@ -65,6 +69,8 @@ public class ObjectClassHandlerConfiguration {
         this.objectClass = oc;
 
         //setFilePath(Util.getSafeValue(values, "filePath", null, File.class));
+        setRegion(Util.getSafeValue(values, "region", "us-east-1"));
+        this.cloudStorageService = new CloudStorageService(this.getRegion());
         setBucketName(Util.getSafeValue(values, "bucketName", null));
         setFileName(Util.getSafeValue(values, "fileName", null));
         setEncoding(Util.getSafeValue(values, "encoding", "utf-8"));
@@ -140,11 +146,9 @@ public class ObjectClassHandlerConfiguration {
         this.readOnly = readOnly;
     }
 
-    //TODO DIEGO: S3
     public File getTmpFolder() {
         return tmpFolder;
     }
-    //TODO DIEGO: S3
     public void setTmpFolder(File tmpFolder) {
         this.tmpFolder = tmpFolder;
     }
@@ -165,15 +169,6 @@ public class ObjectClassHandlerConfiguration {
         this.objectClass = objectClass;
     }
 
-
-    /*public File getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(File filePath) {
-        this.filePath = filePath;
-    }*/
-
     public String getBucketName() {
         return bucketName;
     }
@@ -188,6 +183,22 @@ public class ObjectClassHandlerConfiguration {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public CloudStorageService getCloudStorageService() {
+        return cloudStorageService;
+    }
+
+    public void setCloudStorageService(CloudStorageService cloudStorageService) {
+        this.cloudStorageService = cloudStorageService;
     }
 
     public String getEncoding() {
@@ -372,7 +383,7 @@ public class ObjectClassHandlerConfiguration {
     }
 
     private void validateCsvFile() {
-    	Util.checkCanReadFileS3(bucketName,fileName);
+        cloudStorageService.checkCanReadFileS3(bucketName,fileName);
 
     	/*synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
     		if (!readOnly && !filePath.canWrite()) {

@@ -1,6 +1,7 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv.util;
 
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.BaseTest;
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.CloudStorageService;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.CsvConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -22,6 +23,8 @@ public class CsvTestUtil {
 
     private static final Log LOG = Log.getLog(CsvTestUtil.class);
 
+    private static CloudStorageService cloudStorageService= new CloudStorageService();
+
     public static Map<String, String> findRecord(CsvConfiguration config, String value) throws IOException {
         return findRecord(config, BaseTest.ATTR_UID, value);
     }
@@ -33,7 +36,7 @@ public class CsvTestUtil {
 
         CSVFormat csv = Util.createCsvFormat(config.getConfig()).withFirstRecordAsHeader();
 
-        try (Reader reader = Util.createReader(config)) {
+        try (Reader reader = cloudStorageService.createReader(config)) {
 
             CSVParser parser = csv.parse(reader);
             Iterator<CSVRecord> iterator = parser.iterator();

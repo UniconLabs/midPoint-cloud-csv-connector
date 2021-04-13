@@ -28,7 +28,7 @@ public class S3Utils {
      * @return a list with all the keys.
      */
 
-    public static List<String> getObjectslistFromFolder(String bucketName, String folderKey) {
+    public static List<String> getObjectslistFromFolder(String bucketName, String folderKey, AmazonS3 s3Client) {
 
         ListObjectsRequest listObjectsRequest =
                 new ListObjectsRequest()
@@ -36,7 +36,6 @@ public class S3Utils {
                         .withPrefix(folderKey);
 
         List<String> keys = new ArrayList<>();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
         ObjectListing objects = s3Client.listObjects(listObjectsRequest);
         for (;;) {
             List<S3ObjectSummary> summaries = objects.getObjectSummaries();
@@ -50,14 +49,12 @@ public class S3Utils {
         return keys;
     }
 
-    public static S3ObjectInputStream getObjectAsInputStream(String bucketName, String key) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static S3ObjectInputStream getObjectAsInputStream(String bucketName, String key, AmazonS3 s3Client) throws IOException {
         S3Object s3Obj = s3Client.getObject(bucketName, key);
         return s3Obj.getObjectContent();
     }
 
-    public static byte[] getObjectAsByteArray(String bucketName, String key) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static byte[] getObjectAsByteArray(String bucketName, String key, AmazonS3 s3Client) throws IOException {
         S3Object s3Obj = s3Client.getObject(bucketName, key);
         return IOUtils.toByteArray(s3Obj.getObjectContent());
     }
@@ -67,57 +64,48 @@ public class S3Utils {
      * @param fileName the filename (including the path)
      * @return a BufferReader pointing to the file
      */
-    public static BufferedReader openFile(String bucketName, String fileName, String encoding) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static BufferedReader openFile(String bucketName, String fileName, String encoding, AmazonS3 s3Client) throws IOException {
         S3Object s3Obj = s3Client.getObject(bucketName, fileName);
         return new BufferedReader(new InputStreamReader(s3Obj.getObjectContent(), encoding));
     }
 
-    public static void getInAFile(String bucketName, String fileName, File file) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static void getInAFile(String bucketName, String fileName, File file, AmazonS3 s3Client) throws IOException {
         S3Object s3object = s3Client.getObject(bucketName, fileName);
         S3ObjectInputStream inputStream = s3object.getObjectContent();
         FileUtils.copyInputStreamToFile(inputStream, file);
     }
 
 
-    public static BufferedReader openFile(String bucketName, String fileName) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static BufferedReader openFile(String bucketName, String fileName, AmazonS3 s3Client) {
         S3Object s3Obj = s3Client.getObject(bucketName, fileName);
         return new BufferedReader(new InputStreamReader(s3Obj.getObjectContent()));
     }
 
-    public static BufferedReader openFileAgain(String bucketName, String fileName) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static BufferedReader openFileAgain(String bucketName, String fileName, AmazonS3 s3Client) {
         S3Object s3Obj = s3Client.getObject(bucketName, fileName);
         return new BufferedReader(new InputStreamReader(s3Obj.getObjectContent()));
     }
 
-    public static void copyObject(String fromBucket, String fromKey, String toBucket, String toKey) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static void copyObject(String fromBucket, String fromKey, String toBucket, String toKey, AmazonS3 s3Client) {
         s3Client.copyObject(new CopyObjectRequest(fromBucket, fromKey, toBucket, toKey));
     }
 
-    public static void deleteObject(String bucket, String key) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static void deleteObject(String bucket, String key, AmazonS3 s3Client) {
         s3Client.deleteObject(new DeleteObjectRequest(bucket, key));
     }
 
-    public static void moveObject(String fromBucket, String fromKey, String toBucket, String toKey) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static void moveObject(String fromBucket, String fromKey, String toBucket, String toKey, AmazonS3 s3Client) {
         s3Client.copyObject(new CopyObjectRequest(fromBucket, fromKey, toBucket, toKey));
         s3Client.deleteObject(new DeleteObjectRequest(fromBucket, fromKey));
     }
 
-    public static String uploadFileToS3(String bucket, String directory, String filename, File file) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static String uploadFileToS3(String bucket, String directory, String filename, File file, AmazonS3 s3Client) {
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucket,  directory + "/" + filename, file);
         s3Client.putObject(putObjectRequest);
         return directory + "/" + filename;
     }
 
-    public static String uploadFileToS3(String bucket, String filename, File file) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static String uploadFileToS3(String bucket, String filename, File file, AmazonS3 s3Client) {
         PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, filename, file);
         s3Client.putObject(putObjectRequest);
         return filename;
@@ -131,9 +119,9 @@ public class S3Utils {
      * @param contentType The content type of the file
      * @return the key
      */
-    public static String uploadStringToS3(String string, String bucket, String directory, String filename, String contentType) {
+    public static String uploadStringToS3(String string, String bucket, String directory, String filename, String contentType, AmazonS3 s3Client) {
         byte[] fileContentBytes = string.getBytes(StandardCharsets.UTF_8);
-        return uploadByteArrayToS3(fileContentBytes, bucket, directory, filename, contentType);
+        return uploadByteArrayToS3(fileContentBytes, bucket, directory, filename, contentType, s3Client);
     }
 
     /** Writes a S3 file from a byte []
@@ -144,8 +132,7 @@ public class S3Utils {
      * @param contentType The content type of the file
      * @return the key
      */
-    public static String uploadByteArrayToS3(byte[] fileContentBytes, String bucket, String directory, String filename, String contentType) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static String uploadByteArrayToS3(byte[] fileContentBytes, String bucket, String directory, String filename, String contentType, AmazonS3 s3Client) {
         InputStream fileInputStream = new ByteArrayInputStream(fileContentBytes);
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(contentType);
@@ -156,24 +143,20 @@ public class S3Utils {
         return directory + "/" + filename;
     }
 
-    public static Long getObjectSize(String bucket, String key) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static Long getObjectSize(String bucket, String key, AmazonS3 s3Client) {
         return s3Client.getObjectMetadata(bucket, key).getContentLength();
     }
 
-    public static Date getObjectLastUpdated(String bucket, String key) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static Date getObjectLastUpdated(String bucket, String key, AmazonS3 s3Client) {
         return s3Client.getObjectMetadata(bucket, key).getLastModified();
     }
 
-    public static Boolean getObjectExists(String bucket, String key) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
+    public static Boolean getObjectExists(String bucket, String key, AmazonS3 s3Client) {
         return s3Client.doesObjectExist(bucket, key);
     }
 
-    public static void deleteFolderRecursively(String bucket, String path) {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
-        List<String> toDelete = getObjectslistFromFolder(bucket, path);
+    public static void deleteFolderRecursively(String bucket, String path, AmazonS3 s3Client) {
+        List<String> toDelete = getObjectslistFromFolder(bucket, path, s3Client);
         List<DeleteObjectsRequest.KeyVersion> bulk = new ArrayList<>();
         for (int i = 0; i < toDelete.size(); i++) {
             bulk.add(new DeleteObjectsRequest.KeyVersion(toDelete.get(i)));
