@@ -7,6 +7,7 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by lazyman on 22/05/2017.
@@ -14,11 +15,17 @@ import java.io.File;
 public class ConfigurationTest extends BaseTest {
 
     @Test
+    public void testS3Reading() throws IOException {
+        CsvConfiguration config = createConfiguration();
+        Boolean exists = config.getConfig().getCloudStorageService().getObjectExists(config.getBucketName());
+        AssertJUnit.assertTrue("Bucket does not exist", exists);
+    }
+
+    @Test
     public void readOnlyMode() throws Exception {
         CsvConfiguration config = new CsvConfiguration();
 
         File data = new File(BaseTest.CSV_FILE_PATH);
-        //config.setFilePath(data);
         config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);

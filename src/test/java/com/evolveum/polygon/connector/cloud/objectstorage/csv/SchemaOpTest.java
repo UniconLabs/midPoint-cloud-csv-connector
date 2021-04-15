@@ -31,7 +31,7 @@ public class SchemaOpTest extends BaseTest {
         File groupsCsv = new File("./target/groups.csv");
         groupsCsv.delete();
         //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.csv"), groupsCsv);
-        cloudStorageService.uploadFileToS3(config.getBucketName(), "groups.csv", new File(TEMPLATE_FOLDER_PATH + "/groups.csv"));
+        config.getConfig().getCloudStorageService().uploadFileToS3(config.getBucketName(), "groups.csv", new File(TEMPLATE_FOLDER_PATH + "/groups.csv"));
 
 
         ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);

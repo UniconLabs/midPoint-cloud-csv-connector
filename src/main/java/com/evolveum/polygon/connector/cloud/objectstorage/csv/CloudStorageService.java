@@ -66,6 +66,10 @@ public class CloudStorageService {
         return S3Utils.getObjectExists(bucket, key, s3Client);
     }
 
+    public Boolean getObjectExists(String bucket) throws IOException {
+        return S3Utils.getObjectExists(bucket, null, s3Client);
+    }
+
     public BufferedReader createReaderS3(ObjectClassHandlerConfiguration configuration) throws IOException {
         return Util.createReaderS3(configuration, s3Client);
     }

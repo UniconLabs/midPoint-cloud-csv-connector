@@ -152,6 +152,9 @@ public class S3Utils {
     }
 
     public static Boolean getObjectExists(String bucket, String key, AmazonS3 s3Client) {
+        if (key == null){
+            return s3Client.doesBucketExistV2(bucket);
+        }
         return s3Client.doesObjectExist(bucket, key);
     }
 

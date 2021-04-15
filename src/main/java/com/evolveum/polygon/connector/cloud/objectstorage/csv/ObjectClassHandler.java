@@ -90,7 +90,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		//TODO check the synchronized behavior
 		synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
 			CSVFormat csv = Util.createCsvFormat(configuration);
-			try (Reader reader = cloudStorageService.createReaderS3(fileName, configuration)) {
+			try (Reader reader = configuration.getCloudStorageService().createReaderS3(fileName, configuration)) {
 				CSVParser parser = csv.parse(reader);
 				Iterator<CSVRecord> iterator = parser.iterator();
 
@@ -308,7 +308,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = cloudStorageService.createReaderS3(configuration);
+				reader = configuration.getCloudStorageService().createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				CSVFormat csv = Util.createCsvFormat(configuration);
@@ -451,7 +451,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 	@Override
 	public void executeQuery(ObjectClass oc, String uid, ResultsHandler handler, OperationOptions oo) {
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = cloudStorageService.createReaderS3(configuration)) {
+		try (Reader reader = configuration.getCloudStorageService().createReaderS3(configuration)) {
 
 			CSVParser parser = csv.parse(reader);
 			Iterator<CSVRecord> iterator = parser.iterator();
@@ -506,7 +506,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		validateAuthenticationInputs(username, password, authenticate);
 
 		CSVFormat csv = Util.createCsvFormatReader(configuration);
-		try (Reader reader = cloudStorageService.createReaderS3(configuration)) {
+		try (Reader reader = configuration.getCloudStorageService().createReaderS3(configuration)) {
 
 			ConnectorObject object = null;
 
@@ -999,7 +999,7 @@ public class ObjectClassHandler implements CreateOp, DeleteOp, TestOp, SearchOp<
 		Writer writer = null;
 		try {
 			synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-				reader = cloudStorageService.createReaderS3(configuration);
+				reader = configuration.getCloudStorageService().createReaderS3(configuration);
 				writer = new BufferedWriter(Channels.newWriter(lock.channel(), configuration.getEncoding()));
 
 				boolean found = false;

@@ -9,7 +9,9 @@ import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.test.common.TestHelpers;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
@@ -23,9 +25,9 @@ public abstract class BaseTest {
 
     public static final String CSV_FILE_PATH = "./target/data.csv";
     public static final String CSV_TMP_FILE_PATH = "./target/";
-    public static final String S3_BUCKET_NAME = "unicontests3connector";
+    public static final String DEFAULT_S3_BUCKET_NAME = "tests3connector";
     public static final String S3_FILE_NAME = "data.csv";
-    public static final String S3_REGION = "us-west-2";
+    public static final String DEFAULT_S3_REGION = "us-east-1";
 
 
     public static final String ATTR_UID = "uid";
@@ -42,10 +44,18 @@ public abstract class BaseTest {
     protected CsvConfiguration createConfigurationNameEqualsUid() {
         CsvConfiguration config = new CsvConfiguration();
 
-        //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
+        Properties p = new Properties();
+        InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
+        try {
+            p.load(is);
+            config.setRegion(p.getProperty("awstest.region"));
+            config.setBucketName(p.getProperty("awstest.bucket"));
+        }
+        catch (IOException e) {
+            config.setRegion(BaseTest.DEFAULT_S3_REGION);
+            config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
+        }
         config.setFileName(BaseTest.S3_FILE_NAME);
-        config.setRegion(BaseTest.S3_REGION);
-        config.setBucketName(BaseTest.S3_BUCKET_NAME);
         config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
@@ -55,10 +65,19 @@ public abstract class BaseTest {
 
     protected CsvConfiguration createConfigurationDifferent() {
         CsvConfiguration config = new CsvConfiguration();
-        //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
+
+        Properties p = new Properties();
+        InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
+        try {
+            p.load(is);
+            config.setRegion(p.getProperty("awstest.region"));
+            config.setBucketName(p.getProperty("awstest.bucket"));
+        }
+        catch (IOException e) {
+            config.setRegion(BaseTest.DEFAULT_S3_REGION);
+            config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
+        }
         config.setFileName(BaseTest.S3_FILE_NAME);
-        config.setBucketName(BaseTest.S3_BUCKET_NAME);
-        config.setRegion(BaseTest.S3_REGION);
         config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
@@ -86,11 +105,20 @@ public abstract class BaseTest {
     }
     
     protected void copyDataFile(String csvTemplate, CsvConfiguration config) throws IOException {
+        Properties p = new Properties();
+        InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
+        try {
+            p.load(is);
+            config.setRegion(p.getProperty("awstest.region"));
+            config.setBucketName(p.getProperty("awstest.bucket"));
+        }
+        catch (IOException e) {
+            config.setRegion(BaseTest.DEFAULT_S3_REGION);
+            config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
+        }
     	File file = new File(CSV_FILE_PATH);
         file.delete();
         config.setFileName(BaseTest.S3_FILE_NAME);
-        config.setBucketName(BaseTest.S3_BUCKET_NAME);
-        config.setRegion(BaseTest.S3_REGION);
         cloudStorageService.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + csvTemplate));
         //config.setFilePath(new File(CSV_FILE_PATH));
         config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
