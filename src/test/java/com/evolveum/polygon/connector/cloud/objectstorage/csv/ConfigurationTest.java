@@ -5,7 +5,6 @@ import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -15,27 +14,26 @@ import java.io.IOException;
 public class ConfigurationTest extends BaseTest {
 
     @Test
-    public void testS3Reading() throws IOException {
-        CsvConfiguration config = createConfiguration();
-        Boolean exists = config.getConfig().getCloudStorageService().getObjectExists(config.getBucketName());
+    public void testS3Reading() throws Exception {
+        final CloudCsvConfiguration config = createConfiguration();
+        final CloudStorageService test = CloudStorageServiceFactory.getCloudServiceProvider(config);
+        final Boolean exists = test.checkBucketExists(config);
         AssertJUnit.assertTrue("Bucket does not exist", exists);
     }
 
     @Test
     public void readOnlyMode() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
-
-        File data = new File(BaseTest.CSV_FILE_PATH);
-        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
+        final CloudCsvConfiguration config = new CloudCsvConfiguration();
+        final File data = new File(BaseTest.CSV_FILE_PATH);
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setReadOnly(true);
 
-        ConnectorFacade connector = setupConnector("/create.csv", config);
+        final ConnectorFacade connector = setupConnector("/create.csv", config);
 
         data.setWritable(false);
 
-        ListResultHandler handler = new ListResultHandler();
+        final ListResultHandler handler = new ListResultHandler();
         connector.search(ObjectClass.ACCOUNT, null, handler, null);
 
         AssertJUnit.assertEquals(1, handler.getObjects().size());

@@ -32,7 +32,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test
     public void addValueToAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 
@@ -67,7 +67,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test
     public void addDuplicateValueToAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 
@@ -102,7 +102,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test
     public void removeValueFromAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 
@@ -136,7 +136,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test
     public void removeNonExistingValueFromAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 
@@ -171,7 +171,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void addValueFromUniqueAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 
@@ -184,7 +184,7 @@ public class UpdateAttributeValuesOpTest extends UpdateOpTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void removeValueFromUniqueAttribute() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);
 

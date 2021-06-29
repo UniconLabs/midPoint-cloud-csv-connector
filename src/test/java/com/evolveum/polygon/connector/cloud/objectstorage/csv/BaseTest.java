@@ -1,5 +1,6 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.s3.AwsS3StorageService;
 import org.identityconnectors.framework.api.APIConfiguration;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.api.ConnectorFacadeFactory;
@@ -35,14 +36,19 @@ public abstract class BaseTest {
     public static final String ATTR_LAST_NAME = "lastName";
     public static final String ATTR_PASSWORD = "password";
 
-    CloudStorageService cloudStorageService = new CloudStorageService();
+    CloudStorageService cloudStorageService = new AwsS3StorageService();
 
-    protected CsvConfiguration createConfiguration() {
+    protected CloudCsvConfiguration createConfiguration() {
         return createConfigurationNameEqualsUid();
     }
 
-    protected CsvConfiguration createConfigurationNameEqualsUid() {
-        CsvConfiguration config = new CsvConfiguration();
+    protected CloudCsvConfiguration createConfigurationNameEqualsUid() {
+        CloudCsvConfiguration config = null;
+        try {
+            config = new CloudCsvConfiguration();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Properties p = new Properties();
         InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
@@ -56,15 +62,19 @@ public abstract class BaseTest {
             config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
         }
         config.setFileName(BaseTest.S3_FILE_NAME);
-        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
 
         return config;
     }
 
-    protected CsvConfiguration createConfigurationDifferent() {
-        CsvConfiguration config = new CsvConfiguration();
+    protected CloudCsvConfiguration createConfigurationDifferent() {
+        CloudCsvConfiguration config = null;
+        try {
+            config = new CloudCsvConfiguration();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Properties p = new Properties();
         InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
@@ -78,7 +88,6 @@ public abstract class BaseTest {
             config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
         }
         config.setFileName(BaseTest.S3_FILE_NAME);
-        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setNameAttribute(ATTR_LAST_NAME);
@@ -86,25 +95,25 @@ public abstract class BaseTest {
         return config;
     }
 
-    protected ConnectorFacade setupConnector(String csvTemplate) throws IOException {
+    protected ConnectorFacade setupConnector(String csvTemplate) throws Exception {
         return setupConnector(csvTemplate, createConfiguration());
     }
 
-    protected ConnectorFacade setupConnector(String csvTemplate, CsvConfiguration config) throws IOException {
+    protected ConnectorFacade setupConnector(String csvTemplate, CloudCsvConfiguration config) throws Exception {
         
     	copyDataFile(csvTemplate, config);
 
         return createNewInstance(config);
     }
     
-    protected ConnectorFacade createNewInstance(CsvConfiguration config) {
+    protected ConnectorFacade createNewInstance(CloudCsvConfiguration config) {
     	ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
 
-        APIConfiguration impl = TestHelpers.createTestConfiguration(CsvCloudObjectStorageConnector.class, config);
+        APIConfiguration impl = TestHelpers.createTestConfiguration(CloudCsvObjectStorageConnector.class, config);
         return factory.newInstance(impl);
     }
     
-    protected void copyDataFile(String csvTemplate, CsvConfiguration config) throws IOException {
+    protected void copyDataFile(String csvTemplate, CloudCsvConfiguration config) throws Exception {
         Properties p = new Properties();
         InputStream is = ClassLoader.getSystemResourceAsStream("app-test.properties");
         try {
@@ -112,16 +121,15 @@ public abstract class BaseTest {
             config.setRegion(p.getProperty("awstest.region"));
             config.setBucketName(p.getProperty("awstest.bucket"));
         }
-        catch (IOException e) {
+        catch (Exception e) {
             config.setRegion(BaseTest.DEFAULT_S3_REGION);
             config.setBucketName(BaseTest.DEFAULT_S3_BUCKET_NAME);
         }
     	File file = new File(CSV_FILE_PATH);
         file.delete();
         config.setFileName(BaseTest.S3_FILE_NAME);
-        cloudStorageService.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + csvTemplate));
+        cloudStorageService.uploadFile(config, new File(TEMPLATE_FOLDER_PATH + csvTemplate));
         //config.setFilePath(new File(CSV_FILE_PATH));
-        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
 
         config.validate();
     }

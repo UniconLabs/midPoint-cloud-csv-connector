@@ -1,4 +1,4 @@
-# midPoint-s3-csv-connector
+# midPoint-cloud-csv-connector
 
 This connector outputs CSV to Cloud Object Storage. It matches the functionality 
  of the existing CSV connector and only differs on where and how the CSV file

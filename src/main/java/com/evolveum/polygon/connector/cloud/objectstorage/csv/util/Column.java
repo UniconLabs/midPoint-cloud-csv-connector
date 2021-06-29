@@ -1,14 +1,15 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv.util;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Created by lazyman on 02/02/2017.
  */
 public class Column {
 
-    private String name;
-    private int index;
+    private final String name;
+    private final int index;
 
     public Column(String name, int index) {
         this.name = name;
@@ -31,7 +32,7 @@ public class Column {
         Column column = (Column) o;
 
         if (index != column.index) return false;
-        return name != null ? name.equals(column.name) : column.name == null;
+        return Objects.equals(name, column.name);
     }
 
     @Override

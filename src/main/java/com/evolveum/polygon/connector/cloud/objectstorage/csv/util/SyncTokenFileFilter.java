@@ -8,7 +8,7 @@ import java.io.FilenameFilter;
  */
 public class SyncTokenFileFilter implements FilenameFilter {
 
-    private String csvFileName;
+    private final String csvFileName;
 
     public SyncTokenFileFilter(String csvFileName) {
         this.csvFileName = csvFileName;
@@ -22,10 +22,6 @@ public class SyncTokenFileFilter implements FilenameFilter {
             return false;
         }
 
-        if (fileName.matches(csvFileName.replaceAll("\\.", "\\\\.") + "\\.sync\\.[0-9]{13}$")) {
-            return true;
-        }
-
-        return false;
+        return fileName.matches(csvFileName.replaceAll("\\.", "\\\\.") + "\\.sync\\.[0-9]{13}$");
     }
 }

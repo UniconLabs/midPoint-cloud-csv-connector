@@ -7,7 +7,6 @@ import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.*;
 import org.testng.annotations.Test;
-import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,10 +26,9 @@ public class CreateOpTest extends BaseTest {
 
     @Test(expectedExceptions = ConnectorException.class)
     public void readOnlyMode() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        CloudCsvConfiguration config = new CloudCsvConfiguration();
 
         //config.setFilePath(new File(BaseTest.CSV_FILE_PATH));
-        config.setTmpFolder(new File(BaseTest.CSV_TMP_FILE_PATH));
         config.setUniqueAttribute(ATTR_UID);
         config.setPasswordAttribute(ATTR_PASSWORD);
         config.setReadOnly(true);
@@ -222,7 +220,7 @@ public class CreateOpTest extends BaseTest {
 
     @Test
     public void createAccountAllAttributesNameEqualsUidMultilineMultivalue() throws Exception {
-        CsvConfiguration config = createConfigurationNameEqualsUid();
+        CloudCsvConfiguration config = createConfigurationNameEqualsUid();
         config.setMultivalueDelimiter(",");
         ConnectorFacade connector = setupConnector("/create.csv", config);
 

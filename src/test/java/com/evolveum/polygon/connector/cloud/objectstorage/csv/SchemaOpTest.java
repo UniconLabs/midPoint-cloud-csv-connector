@@ -1,6 +1,5 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
-import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.ConnectorFacade;
 import org.identityconnectors.framework.common.exceptions.ConfigurationException;
@@ -19,80 +18,79 @@ public class SchemaOpTest extends BaseTest {
 
     @Test
     public void multipleClasses() throws Exception {
-        CsvConfiguration config = createConfiguration();
-        config.setUniqueAttribute("id");
+        final CloudCsvConfiguration config = createConfiguration();
+                config.setUniqueAttribute("id");
         config.setTrim(true);
         config.setPasswordAttribute(null);
+        final CloudStorageService test = CloudStorageServiceFactory.getCloudServiceProvider(config);
 
-        File groupsProperties = new File("./target/groups.properties");
+        final File groupsProperties = new File("./target/groups.properties");
         groupsProperties.delete();
-        config.setObjectClassDefinition(groupsProperties);
+        config.setObjectClassDefinition("./target/groups.properties");
+
         FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.properties"), groupsProperties);
-        File groupsCsv = new File("./target/groups.csv");
+        final File groupsCsv = new File("./target/groups.csv");
         groupsCsv.delete();
+
         //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH + "/groups.csv"), groupsCsv);
-        config.getConfig().getCloudStorageService().uploadFileToS3(config.getBucketName(), "groups.csv", new File(TEMPLATE_FOLDER_PATH + "/groups.csv"));
+        test.uploadFile(config, new File(TEMPLATE_FOLDER_PATH + "/groups.csv"));
 
+        final ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
 
-        ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
-
-        Schema schema = connector.schema();
+        final Schema schema = connector.schema();
         assertEquals(2, schema.getObjectClassInfo().size());
 
-        ObjectClassInfo info = schema.findObjectClassInfo("group");
+        final ObjectClassInfo info = schema.findObjectClassInfo("group");
         assertNotNull(info);
     }
 
     @Test
     public void repeatingColumns() throws Exception {
-        CsvConfiguration config = createConfiguration();
+        final CloudCsvConfiguration config = createConfiguration();
         config.setUniqueAttribute("id");
         config.setTrim(true);
         config.setPasswordAttribute(null);
-        ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
 
+        final ConnectorFacade connector = setupConnector("/schema-repeating-column.csv", config);
         connector.schema();
     }
 
     @Test(expectedExceptions = ConfigurationException.class)
     public void emptySchema() throws Exception {
-        ConnectorFacade connector = setupConnector("/schema-empty.csv");
-
+        final ConnectorFacade connector = setupConnector("/schema-empty.csv");
         connector.schema();
     }
 
     @Test(expectedExceptions = ConfigurationException.class)
     public void badPwdFileSchema() throws Exception {
-        ConnectorFacade connector = setupConnector("/schema-bad-pwd.csv");
-
+        final ConnectorFacade connector = setupConnector("/schema-bad-pwd.csv");
         connector.schema();
     }
 
     @Test(expectedExceptions = ConfigurationException.class)
     public void badUniqueFileSchema() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        final CloudCsvConfiguration config = new CloudCsvConfiguration();
         config.setUniqueAttribute("uid");
 
-        ConnectorFacade connector = setupConnector("/schema-bad-unique.csv", config);
-
+        final ConnectorFacade connector = setupConnector("/schema-bad-unique.csv", config);
         connector.schema();
     }
 
     @Test
     public void goodFileSchema() throws Exception {
-        ConnectorFacade connector = setupConnector("/schema-good.csv");
+        final ConnectorFacade connector = setupConnector("/schema-good.csv");
 
-        Schema schema = connector.schema();
+        final Schema schema = connector.schema();
         assertNotNull(schema);
-        Set<ObjectClassInfo> objClassInfos = schema.getObjectClassInfo();
+        final Set<ObjectClassInfo> objClassInfos = schema.getObjectClassInfo();
         assertNotNull(objClassInfos);
         assertEquals(1, objClassInfos.size());
 
-        ObjectClassInfo info = objClassInfos.iterator().next();
+        final ObjectClassInfo info = objClassInfos.iterator().next();
         assertNotNull(info);
         assertEquals(ObjectClass.ACCOUNT.getObjectClassValue(), info.getType());
         assertFalse(info.isContainer());
-        Set<AttributeInfo> attrInfos = info.getAttributeInfo();
+        final Set<AttributeInfo> attrInfos = info.getAttributeInfo();
         assertNotNull(attrInfos);
         assertEquals(5, attrInfos.size());
 
@@ -105,24 +103,24 @@ public class SchemaOpTest extends BaseTest {
 
     @Test
     public void uniqueDifferentThanNameSchema() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        final CloudCsvConfiguration config = new CloudCsvConfiguration();
         config.setUniqueAttribute("uid");
         config.setNameAttribute("lastName");
         config.setPasswordAttribute("password");
 
-        ConnectorFacade connector = setupConnector("/schema-good.csv", config);
+        final ConnectorFacade connector = setupConnector("/schema-good.csv", config);
 
-        Schema schema = connector.schema();
+        final Schema schema = connector.schema();
         assertNotNull(schema);
-        Set<ObjectClassInfo> objClassInfos = schema.getObjectClassInfo();
+        final Set<ObjectClassInfo> objClassInfos = schema.getObjectClassInfo();
         assertNotNull(objClassInfos);
         assertEquals(1, objClassInfos.size());
 
-        ObjectClassInfo info = objClassInfos.iterator().next();
+        final ObjectClassInfo info = objClassInfos.iterator().next();
         assertNotNull(info);
         assertEquals(ObjectClass.ACCOUNT.getObjectClassValue(), info.getType());
         assertFalse(info.isContainer());
-        Set<AttributeInfo> attrInfos = info.getAttributeInfo();
+        final Set<AttributeInfo> attrInfos = info.getAttributeInfo();
         assertNotNull(attrInfos);
         assertEquals(5, attrInfos.size());
 
@@ -138,11 +136,11 @@ public class SchemaOpTest extends BaseTest {
     }
 
     private void testAttribute(String name, Set<AttributeInfo> attrInfos, String nativeName, boolean password) {
-        Iterator<AttributeInfo> iterator = attrInfos.iterator();
+        final Iterator<AttributeInfo> iterator = attrInfos.iterator();
 
         boolean found = false;
         while (iterator.hasNext()) {
-            AttributeInfo info = iterator.next();
+            final AttributeInfo info = iterator.next();
             assertNotNull(info);
 
             if (!name.equals(info.getName())) {

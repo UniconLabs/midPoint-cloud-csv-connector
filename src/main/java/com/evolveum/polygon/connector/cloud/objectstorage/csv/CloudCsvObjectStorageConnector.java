@@ -25,17 +25,17 @@ import java.util.Set;
  */
 @ConnectorClass(
         displayNameKey = "UI_CSV_CONNECTOR_NAME",
-        configurationClass = CsvConfiguration.class)
-public class CsvCloudObjectStorageConnector implements Connector, TestOp, SchemaOp, SearchOp<String>, AuthenticateOp,
+        configurationClass = CloudCsvConfiguration.class)
+public class CloudCsvObjectStorageConnector implements Connector, TestOp, SchemaOp, SearchOp<String>, AuthenticateOp,
         ResolveUsernameOp, SyncOp, CreateOp, UpdateOp, UpdateAttributeValuesOp, DeleteOp, ScriptOnResourceOp, ScriptOnConnectorOp {
 
 	public static final Integer SYNCH_FILE_LOCK = 0;
 	
-    private static final Log LOG = Log.getLog(CsvCloudObjectStorageConnector.class);
+    private static final Log LOG = Log.getLog(CloudCsvObjectStorageConnector.class);
 
-    private CsvConfiguration configuration;
+    private CloudCsvConfiguration configuration;
 
-    private Map<ObjectClass, ObjectClassHandler> handlers = new HashMap<>();
+    private Map<ObjectClass, CloudCsvProcessor> handlers = new HashMap<>();
 
     @Override
     public Configuration getConfiguration() {
@@ -46,18 +46,20 @@ public class CsvCloudObjectStorageConnector implements Connector, TestOp, Schema
     public void init(Configuration configuration) {
         LOG.info(">>> Initializing connector");
 
-        if (!(configuration instanceof CsvConfiguration)) {
-            throw new ConfigurationException("Configuration is not instance of " + CsvConfiguration.class.getName());
+        if (!(configuration instanceof CloudCsvConfiguration)) {
+            throw new ConfigurationException("Configuration is not instance of " + CloudCsvConfiguration.class.getName());
         }
 
-        CsvConfiguration csvConfig = (CsvConfiguration) configuration;
+        final CloudCsvConfiguration csvConfig = (CloudCsvConfiguration) configuration;
         csvConfig.validate();
 
         this.configuration = csvConfig;
 
         try {
-            List<ObjectClassHandlerConfiguration> configs = this.configuration.getAllConfigs();
-            configs.forEach(config -> handlers.put(config.getObjectClass(), new ObjectClassHandler(config)));
+            final List<CloudCsvConfiguration> configs = this.configuration.getAllConfigs();
+            for (CloudCsvConfiguration config:configs) {
+                handlers.put(config.getObjectClass(), new CloudCsvProcessor(config));
+            }
         } catch (Exception ex) {
             Util.handleGenericException(ex, "Couldn't initialize connector");
         }
@@ -71,8 +73,8 @@ public class CsvCloudObjectStorageConnector implements Connector, TestOp, Schema
         handlers = null;
     }
 
-    private ObjectClassHandler getHandler(ObjectClass oc) {
-        ObjectClassHandler handler = handlers.get(oc);
+    private CloudCsvProcessor getHandler(ObjectClass oc) {
+        CloudCsvProcessor handler = handlers.get(oc);
         if (handler == null) {
             throw new ConnectorException("Unknown object class " + oc);
         }
@@ -106,7 +108,7 @@ public class CsvCloudObjectStorageConnector implements Connector, TestOp, Schema
     public Schema schema() {
         LOG.info(">>> schema started");
 
-        SchemaBuilder builder = new SchemaBuilder(CsvCloudObjectStorageConnector.class);
+        SchemaBuilder builder = new SchemaBuilder(CloudCsvObjectStorageConnector.class);
         handlers.values().forEach(handler -> {
 
             LOG.info("schema started for {0}", handler.getObjectClass());

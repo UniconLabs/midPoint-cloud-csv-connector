@@ -1,9 +1,7 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv.util;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.evolveum.polygon.connector.cloud.objectstorage.csv.CsvConfiguration;
-import com.evolveum.polygon.connector.cloud.objectstorage.csv.CsvCloudObjectStorageConnector;
-import com.evolveum.polygon.connector.cloud.objectstorage.csv.ObjectClassHandlerConfiguration;
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.CloudCsvConfiguration;
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.CloudCsvObjectStorageConnector;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.identityconnectors.common.Base64;
@@ -15,20 +13,13 @@ import org.identityconnectors.framework.common.exceptions.ConfigurationException
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 import org.identityconnectors.framework.common.objects.Attribute;
-
 import java.io.*;
-import java.nio.Buffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-/**
- * Created by Viliam Repan (lazyman).
- */
+
 public class Util {
 
     private static final Log LOG = Log.getLog(Util.class);
@@ -41,6 +32,8 @@ public class Util {
 
     public static final String DEFAULT_COLUMN_NAME = "col";
 
+    public static final String DEFAULT_TMP_FOLDER = "/tmp/csv";
+
     public static void closeQuietly(Closeable closeable) {
         if (closeable == null) {
             return;
@@ -49,10 +42,10 @@ public class Util {
         try {
             closeable.close();
         } catch (IOException ex) {
+            //swallow
         }
     }
 
-    //TODO: This must be changed to the S3 way.
     public static void closeQuietly(FileLock lock) {
         try {
             if (lock != null && lock.isValid()) {
@@ -61,76 +54,6 @@ public class Util {
         } catch (IOException ex) {
             LOG.warn("Unlock failed for {0}!", lock);
         }
-    }
-
-    public static File createSyncLockFile(ObjectClassHandlerConfiguration config) {
-        String fileName = config.getFileName() + "." + SYNC_LOCK_EXTENSION;
-        return new File(config.getTmpFolder(), fileName);
-    }
-
-    public static File createTmpPath(ObjectClassHandlerConfiguration config) {
-        String fileName = config.getFileName() + config.hashCode() + "." + TMP_EXTENSION;
-        return new File(config.getTmpFolder(), fileName);
-    }
-
-    public static FileLock obtainTmpFileLock(ObjectClassHandlerConfiguration config) {
-        File tmp = createTmpPath(config);
-        return obtainTmpFileLock(tmp);
-    }
-
-    public static FileLock obtainTmpFileLock(File file) {
-        LOG.ok("Obtaining file lock for {0}", file.getPath());
-
-        int attempts = 0;
-
-        final long MAX_WAIT = 5 * 1000; // 5 seconds
-        Path path = file.toPath();
-
-        long start = System.currentTimeMillis();
-        FileChannel channel;
-        while (true) {
-            try {
-                attempts++;
-
-                channel = FileChannel.open(path,
-                        new HashSet(Arrays.asList(StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)));
-
-                break;
-            } catch (IOException ex) {
-                if (System.currentTimeMillis() > (start + MAX_WAIT)) {
-                    throw new ConnectorIOException("Timeout, couldn't create tmp file '" + file.getPath()
-                            + "', reason: " + ex.getMessage(), ex);
-                }
-
-                try {
-                    Thread.sleep((long) (10 + (Math.random() * 50)));
-                } catch (InterruptedException ie) {
-                    throw new ConnectorException(ie);
-                }
-            }
-        }
-
-        FileLock lock;
-        try {
-            lock = channel.lock();
-        } catch (IOException ex) {
-            try {
-                channel.close();
-            } catch (IOException io) {
-                LOG.warn("Close failed for {0}!", channel);
-            }
-
-            if (!file.delete()) {
-                throw new ConnectorIOException("Couldn't delete lock file '" + file.getPath() + "'");
-            }
-
-            throw new ConnectorIOException("Couldn't obtain lock for temp file '" + file.getPath()
-                    + "', reason: " + ex.getMessage(), ex);
-        }
-
-        LOG.ok("Lock for file {0} obtained (attempts: {1})", file.getPath(), attempts);
-
-        return lock;
     }
 
     public static <T> T getSafeValue(Map<String, Object> map, String key, T defValue) {
@@ -161,56 +84,34 @@ public class Util {
         return defValue;
     }
 
-    public static BufferedReader createReader(File path, ObjectClassHandlerConfiguration configuration) throws IOException {
+    public static BufferedReader createReader(final File path, final CloudCsvConfiguration configuration) throws IOException {
         FileInputStream fis = new FileInputStream(path);
         InputStreamReader in = new InputStreamReader(fis, configuration.getEncoding());
         return new BufferedReader(in);
     }
 
-    public static BufferedReader createReaderS3(ObjectClassHandlerConfiguration configuration, AmazonS3 s3Client) throws IOException {
-        return createReaderS3(configuration.getFileName(), configuration, s3Client);
-    }
-
-    public static BufferedReader createReaderS3(String fileName, ObjectClassHandlerConfiguration configuration, AmazonS3 s3Client) throws IOException {
-        BufferedReader fileOpened = S3Utils.openFile(configuration.getBucketName(),fileName, configuration.getEncoding(), s3Client);
-        return fileOpened;
-    }
-
-    //TODO DIEGO: S3
-    public static void checkCanReadFile(File file) {
+    public static boolean checkCanReadFile(File file) {
         if (file == null) {
-            throw new ConfigurationException("File path is not defined");
+            LOG.info("File path is not defined!");
+            return false;
         }
         
-        synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
+        synchronized (CloudCsvObjectStorageConnector.SYNCH_FILE_LOCK) {
         	if (!file.exists()) {
-        		throw new ConfigurationException("File '" + file + "' doesn't exists. At least file with CSV header must exist");
+                LOG.info("File '" + file + "' doesn't exist. A file with a CSV header must exist!");
+                return false;
         	}
         	if (file.isDirectory()) {
-        		throw new ConfigurationException("File path '" + file + "' is a directory, must be a CSV file");
+                LOG.info("File path '" + file + "' is a directory, must be a CSV file!");
+                return false;
         	}
         	if (!file.canRead()) {
-        		throw new ConfigurationException("File '" + file + "' can't be read");
+                LOG.info("File '" + file + "' can't be read!");
+                return false;
         	}
         }
-    }
 
-    public static void checkCanReadFileS3(String bucketName, String fileName, AmazonS3 s3Client) {
-        if (!S3Utils.getObjectExists(bucketName, fileName, s3Client)) {
-            throw new ConfigurationException("BucketName or FileName are not correct");
-        }
-        //TODO DIEGO: Do I need this?
-        /*synchronized (CsvCloudObjectStorageConnector.SYNCH_FILE_LOCK) {
-            if (!file.exists()) {
-                throw new ConfigurationException("File '" + file + "' doesn't exists. At least file with CSV header must exist");
-            }
-            if (file.isDirectory()) {
-                throw new ConfigurationException("File path '" + file + "' is a directory, must be a CSV file");
-            }
-            if (!file.canRead()) {
-                throw new ConfigurationException("File '" + file + "' can't be read");
-            }
-        }*/
+        return true;
     }
 
     public static void handleGenericException(Exception ex, String message) {
@@ -235,14 +136,6 @@ public class Util {
         }
     }
 
-    public static BufferedReader createReader(CsvConfiguration configuration, AmazonS3 s3Client) throws IOException {
-        return createReaderS3(configuration.getFileName(), configuration, s3Client);
-    }
-
-    public static BufferedReader createReaderS3(String fileName, CsvConfiguration configuration, AmazonS3 s3Client) throws IOException {
-        return S3Utils.openFile(configuration.getConfig().getBucketName(), fileName, configuration.getEncoding(), s3Client);
-    }
-
     public static Character toCharacter(String value) {
         if (value == null) {
             return null;
@@ -262,14 +155,14 @@ public class Util {
         }
     }
 
-    public static CSVFormat createCsvFormatReader(ObjectClassHandlerConfiguration configuration) {
+    public static CSVFormat createCsvFormatReader(CloudCsvConfiguration configuration) {
         CSVFormat format = createCsvFormat(configuration);
         format = format.withSkipHeaderRecord(configuration.isHeaderExists());
 
         return format;
     }
 
-    public static CSVFormat createCsvFormat(ObjectClassHandlerConfiguration configuration) {
+    public static CSVFormat createCsvFormat(CloudCsvConfiguration configuration) {
         notNull(configuration, "CsvConfiguration must not be null");
 
         return CSVFormat.newFormat(toCharacter(configuration.getFieldDelimiter()))
@@ -286,7 +179,7 @@ public class Util {
                 .withTrim(configuration.isTrim());
     }
 
-    public static String createRawValue(Attribute attribute, ObjectClassHandlerConfiguration configuration) {
+    public static String createRawValue(Attribute attribute, CloudCsvConfiguration configuration) {
         if (attribute == null) {
             return null;
         }
@@ -294,7 +187,7 @@ public class Util {
         return createRawValue(attribute.getValue(), configuration);
     }
 
-    public static String createRawValue(List<Object> values, ObjectClassHandlerConfiguration configuration) {
+    public static String createRawValue(List<Object> values, CloudCsvConfiguration configuration) {
         if (values == null || values.isEmpty()) {
             return null;
         }
@@ -333,7 +226,7 @@ public class Util {
     }
 
     public static <T extends Object> List<T> createAttributeValues(String raw, Class<T> type,
-                                                                   ObjectClassHandlerConfiguration configuration) {
+                                                                   CloudCsvConfiguration configuration) {
         if (StringUtil.isEmpty(raw)) {
             return new ArrayList<>();
         }
@@ -417,47 +310,10 @@ public class Util {
         return DATE_FORMAT.format(new Date(millis));
     }
 
-    public static void cleanupResources(Writer writer, Reader reader, FileLock lock,
-                                        ObjectClassHandlerConfiguration config) {
+    public static void cleanupResources(Writer writer, Reader reader, FileLock lock) {
         Util.closeQuietly(writer);
         Util.closeQuietly(reader);
         Util.closeQuietly(lock);
-
-        File tmp = Util.createTmpPath(config);
-        tmp.delete();
-    }
-
-    public static String[] listTokenFiles(ObjectClassHandlerConfiguration config) {
-        File tmpFolder = config.getTmpFolder();
-        String csvFileName = config.getFileName();
-        return tmpFolder.list(new SyncTokenFileFilter(csvFileName));
-    }
-
-    public static File createSyncFileName(long timestamp, ObjectClassHandlerConfiguration config) {
-        String fileName = config.getFileName();
-        File tmpFolder = config.getTmpFolder();
-
-        return new File(tmpFolder, fileName + ".sync." + timestamp);
-    }
-
-    public static File findOldestSyncFile(long token, ObjectClassHandlerConfiguration config) {
-        String[] tokenFiles = Util.listTokenFiles(config);
-        Arrays.sort(tokenFiles);
-
-        for (String name : tokenFiles) {
-            String[] array = name.split("\\.");
-            String fileToken = array[array.length - 1];
-
-            long fileTokenLong = Long.parseLong(fileToken);
-            if (fileTokenLong <= token) {
-                continue;
-            }
-
-            File tmpFolder = config.getTmpFolder();
-            return new File(tmpFolder, name);
-        }
-
-        return null;
     }
 
     public static <E> List<E> copyOf(Iterator<? extends E> elements) {
@@ -476,8 +332,4 @@ public class Util {
 
         return Collections.unmodifiableList(list);
     }
-
-
-
-
 }

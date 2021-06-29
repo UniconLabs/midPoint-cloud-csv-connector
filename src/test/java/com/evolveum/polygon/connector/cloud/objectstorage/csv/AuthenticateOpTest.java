@@ -35,7 +35,7 @@ public class AuthenticateOpTest extends BaseTest {
 
     @Test(expectedExceptions = ConfigurationException.class)
     public void passwordColumNameNotDefined() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        CloudCsvConfiguration config = new CloudCsvConfiguration();
         config.setUniqueAttribute("uid");
 
         connector = setupConnector("/authenticate.csv", config);

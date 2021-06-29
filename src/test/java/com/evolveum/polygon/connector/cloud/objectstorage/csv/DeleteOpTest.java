@@ -10,8 +10,6 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.testng.AssertJUnit.assertNull;
-
 /**
  * Created by Viliam Repan (lazyman).
  */

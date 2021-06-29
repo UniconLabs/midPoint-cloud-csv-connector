@@ -1,7 +1,7 @@
 package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 
+import com.evolveum.polygon.connector.cloud.objectstorage.csv.s3.AwsS3StorageService;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.CsvTestUtil;
-import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.S3Utils;
 import com.evolveum.polygon.connector.cloud.objectstorage.csv.util.Util;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
@@ -26,11 +26,11 @@ public class SyncOpTest extends BaseTest {
 
     private static final Log LOG = Log.getLog(SyncOpTest.class);
 
-    private CloudStorageService cloudStorageService= new CloudStorageService();
+    private CloudStorageService cloudStorageService= new AwsS3StorageService();
 
     @Test(expectedExceptions = ConnectorException.class)
     public void syncLock() throws Exception {
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/sync.csv", config);
 
@@ -75,7 +75,7 @@ public class SyncOpTest extends BaseTest {
 
     @Test
     public void syncTest() throws Exception {
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/sync.csv", config);
 
@@ -110,7 +110,7 @@ public class SyncOpTest extends BaseTest {
 
     @Test
     public void syncActualTokenTest() throws Exception {
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/sync.csv", config);
 
@@ -192,7 +192,7 @@ public class SyncOpTest extends BaseTest {
 
         CsvTestUtil.deleteAllSyncFiles();
 
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/sync-loop-1.csv", config);
 
@@ -253,21 +253,21 @@ public class SyncOpTest extends BaseTest {
         }
     }
 
-    private void switchCsvFile(boolean useSecond, CsvConfiguration config) throws IOException {
+    private void switchCsvFile(boolean useSecond, CloudCsvConfiguration config) throws Exception {
         String file = useSecond ? "sync-loop-2.csv" : "sync-loop-1.csv";
-        cloudStorageService.uploadFileToS3(config.getBucketName(), config.getFileName(), new File(TEMPLATE_FOLDER_PATH + "/" + file));
+        cloudStorageService.uploadFile(config, new File(TEMPLATE_FOLDER_PATH + "/" + file));
         //File csv = new File(CSV_FILE_PATH);
         //FileUtils.copyFile(new File(TEMPLATE_FOLDER_PATH, file), csv);
         //FileUtils.touch(csv);
 
-        LOG.info("Using second={0}, time: {1}", useSecond, cloudStorageService.getObjectLastUpdated(config.getBucketName(), config.getFileName()));
+        LOG.info("Using second={0}, time: {1}", useSecond, cloudStorageService.getFileLastUpdated(config));
     }
 
     @Test
     public void syncTokenTest() throws Exception {
         CsvTestUtil.deleteAllSyncFiles();
 
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         config.setTrim(true);
         ConnectorFacade connector = setupConnector("/sync-loop-1.csv", config);
 
@@ -282,10 +282,10 @@ public class SyncOpTest extends BaseTest {
             token2 = doSync(connector, token);
             switchCsvFile(false, config);
 
-            File toDelete = Util.createSyncFileName(Long.parseLong((String) token2.getValue()), config.getConfig());
-            if (!toDelete.delete()) {
-                throw new RuntimeException("Couldn't delete " + toDelete.getName());
-            }
+//            File toDelete = Util.createSyncFileName(Long.parseLong((String) token2.getValue()), config);
+//            if (!toDelete.delete()) {
+//                throw new RuntimeException("Couldn't delete " + toDelete.getName());
+//            } //TODO
 
             doSync(connector, token2);
         }

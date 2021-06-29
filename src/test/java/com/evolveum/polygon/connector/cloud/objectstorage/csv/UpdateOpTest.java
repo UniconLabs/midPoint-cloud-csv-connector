@@ -210,7 +210,7 @@ public class UpdateOpTest extends BaseTest {
 
     @Test
     public void updateDifferentOtherAttributeMultivalue() throws Exception {
-        CsvConfiguration config = createConfigurationDifferent();
+        CloudCsvConfiguration config = createConfigurationDifferent();
         config.setMultivalueDelimiter(",");
 
         ConnectorFacade connector = setupConnector(TEMPLATE_UPDATE, config);

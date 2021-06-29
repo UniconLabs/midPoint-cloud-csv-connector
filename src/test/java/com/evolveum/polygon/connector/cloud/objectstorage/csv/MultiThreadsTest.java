@@ -19,7 +19,6 @@ package com.evolveum.polygon.connector.cloud.objectstorage.csv;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class MultiThreadsTest extends BaseTest{
         Map<Integer, Set<Attribute>> mapAttributes3 = getMapOfAttributesForThread(from+(2*by), from+(3*by), setExpectedRecord, false);
         Map<Integer, Set<Attribute>> mapAttributes4 = getMapOfAttributesForThread(from+(3*by), from+(4*by), setExpectedRecord, false);
         
-        CsvConfiguration config = createConfiguration();
+        CloudCsvConfiguration config = createConfiguration();
         if(operation.equals(RunnableCreateAccounts.CREATE_OP)) {
         	copyDataFile("/create.csv", config);
         } else if(operation.equals(RunnableCreateAccounts.UPDATE_OP) || operation.equals(RunnableCreateAccounts.DELETE_OP)) {

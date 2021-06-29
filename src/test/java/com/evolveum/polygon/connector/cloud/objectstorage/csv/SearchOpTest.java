@@ -10,7 +10,6 @@ import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 import org.testng.AssertJUnit;
 import org.testng.annotations.Test;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ public class SearchOpTest extends BaseTest {
 
     @Test
     public void findOneWithRepeatingColumn() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        CloudCsvConfiguration config = new CloudCsvConfiguration();
         //config.setFilePath(new File(CSV_FILE_PATH));
         config.setUniqueAttribute("id");
         config.setTrim(true);
@@ -49,7 +48,7 @@ public class SearchOpTest extends BaseTest {
 
     @Test
     public void findAllAccountsRepeatingColumn() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        CloudCsvConfiguration config = new CloudCsvConfiguration();
         //config.setFilePath(new File(CSV_FILE_PATH));
         config.setUniqueAttribute("id");
         config.setTrim(true);
@@ -66,7 +65,7 @@ public class SearchOpTest extends BaseTest {
 
     @Test(expectedExceptions = ConnectorException.class)
     public void searchWrongNumberColumnCountInRow() throws Exception {
-        CsvConfiguration config = new CsvConfiguration();
+        CloudCsvConfiguration config = new CloudCsvConfiguration();
         //config.setFilePath(new File(CSV_FILE_PATH));
         config.setQuoteMode("ALL");
         config.setFieldDelimiter(",");
