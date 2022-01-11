@@ -4,6 +4,8 @@ This connector outputs CSV to Cloud Object Storage. It matches the functionality
  of the existing CSV connector and only differs on where and how the CSV file
   is exported.  
 
+Created by Unicon Inc. for the University of Wisconsin Madison, using the CSV Connector created by Evolveum.   
+
 Currently, it supports these cloud services only:
 - AWS S3
 
